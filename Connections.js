@@ -10,7 +10,6 @@ class Connections {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // Performance optimization: Use squared distance to avoid Math.sqrt when possible
     getDistanceSquared(particleA, particleB) {
         const dx = particleA.x - particleB.x;
         const dy = particleA.y - particleB.y;
@@ -43,15 +42,12 @@ class Connections {
         this.settings = connectionSettings;
         if (!this.settings.enabled) return;
 
-        for (let i = 0; i < this.connections.length; i++) {
+        for (let i = this.connections.length - 1; i >= 0; i--) {
             const connection = this.connections[i];
             if (!particles.includes(connection.start) || !particles.includes(connection.end)) {
                 this.connections.splice(i, 1);
-                i--;
-            }
-            if (this.getDistance(connection.start, connection.end) > this.settings.distance) {
+            } else if (this.getDistance(connection.start, connection.end) > this.settings.distance) {
                 this.connections.splice(i, 1);
-                i--;
             }
         }
 
@@ -146,7 +142,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             ctx.beginPath();
             ctx.moveTo(connection.start.x, connection.start.y);
@@ -168,7 +164,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             ctx.beginPath();
             ctx.moveTo(connection.start.x, connection.start.y);
@@ -190,7 +186,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             ctx.beginPath();
             ctx.moveTo(connection.start.x, connection.start.y);
@@ -210,7 +206,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             this.drawWavyLine(ctx, connection.start.x, connection.start.y, connection.end.x, connection.end.y);
         }
@@ -278,7 +274,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             this.drawZigzagLine(ctx, connection.start.x, connection.start.y, connection.end.x, connection.end.y);
         }
@@ -354,7 +350,7 @@ class Connections {
             if (fadeDistance > 0) alphaRangeMultiplier = 1 - fadeDistance / (this.settings.distance * 0.35);
             
             ctx.strokeStyle = this.settings.appearance.color;
-            ctx.globalAlpha = Math.min(connection.start.opacity, connection.end.opacity) * this.settings.appearance.opacity * alphaRangeMultiplier;
+            ctx.globalAlpha = Math.min(connection.start.life, connection.end.life) * this.settings.appearance.opacity * alphaRangeMultiplier;
 
             const dx = connection.end.x - connection.start.x;
             const dy = connection.end.y - connection.start.y;

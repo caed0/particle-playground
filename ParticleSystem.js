@@ -10,7 +10,7 @@ class ParticleSystem {
         this.lastTime = 0;
 
         this.settings = {
-            initialParticles: 100, // Initial number of particles
+            initialParticles: 150, // Initial number of particles
             initialSpawnPositions: ['random'],
             clearCanvas: true,
             showDebugInfo: true,
@@ -23,10 +23,10 @@ class ParticleSystem {
             },
         
             backgroundSettings: {
-                type: 'color',           // 'color' or 'gradient'
-                color: '#070016ff',        // Solid background color
+                type: 'color', // 'color' or 'gradient'
+                color: '#111111', // Solid background color
                 gradient: {
-                    type: 'linear',      // 'linear' or 'radial'
+                    type: 'linear', // 'linear' or 'radial'
                     direction: 'vertical', // 'horizontal', 'vertical', 'diagonal'
                     colors: [
                         { stop: 0, color: '#1a1a2e' },
@@ -42,7 +42,7 @@ class ParticleSystem {
                 size: { min: 8, max: 8 }, 
                 color: '#00ff40', 
                 opacity: 1,
-                shape: 'circle', 
+                shape: 'square', 
                 shadow: { 
                     enabled: true, 
                     color: '#00FF41', 
@@ -72,19 +72,19 @@ class ParticleSystem {
                     max: 10 
                 },
                 bounceOffEdges: true,
-                bounceOffParticles: true
+                bounceOffParticles: false
             }
         }
 
         this.connectionSettings = {
-            enabled: false,
-            distance: 125, // Maximum distance for connections
-            maxConnections: 3, // Maximum number of connections per particle
+            enabled: true,
+            distance: 150, // Maximum distance for connections
+            maxConnections: 2, // Maximum number of connections per particle
             appearance: {
                 color: '#00ff40',
                 opacity: 1,
                 lineWidth: 2,
-                lineStyle: 'double', // 'solid', 'dashed', 'dotted', or 'double'
+                lineStyle: 'solid', // 'solid', 'dashed', 'dotted', or 'double'
                 shadow: { 
                     enabled: true, 
                     color: '#00ff40', 
@@ -94,9 +94,9 @@ class ParticleSystem {
         }
 
         this.particleInteractionSettings = {
-            enabled: true,
-            attraction: { force: 200, radius: 130 }, // Force strength for particle attraction
-            repulsion: { force: 140, radius: 35 },  // Force strength for particle repulsion
+            enabled: false,
+            attraction: { force: 75, radius: 150 }, // Force strength for particle attraction
+            repulsion: { force: 125, radius: 50 },  // Force strength for particle repulsion
             mode: 'attract' // 'attract', 'repel', or 'both'
         };
 
@@ -373,6 +373,8 @@ class ParticleSystem {
     }
 
     init() {
+        clearInterval(this.settings.dynamicAdjustment.adjustmentInterval);
+
         this.drawBackground();
         this.animate();
 
