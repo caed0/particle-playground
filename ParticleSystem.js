@@ -6,6 +6,7 @@ class ParticleSystem {
         this.connections = new Connections(this.connectionSettings);
         this.dying = 0;
         this.frameTimes = [];
+        this.lastTime = 0;
 
         this.settings = {
             maxParticles: 300,
@@ -57,8 +58,6 @@ class ParticleSystem {
             }
         };
 
-        this.lastTime = 0;
-        
         // Particle-to-particle interaction settings
         this.particleInteractionSettings = {
             enabled: false,
