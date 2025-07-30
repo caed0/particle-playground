@@ -11,14 +11,14 @@ class Particle {
 
         this.settings = particleSettings;
 
-        const { x, y } = this.getSpawnPosition(this.settings.initialSpawnPosition, canvas);
+        const { x, y } = this.getSpawnPosition(this.settings.behaviour.spawning.initialSpawnPosition, canvas);
         this.x = x;
         this.y = y;
 
-        this.size = this.settings.size.min + Math.random() * (this.settings.size.max - this.settings.size.min);
-        this.speed = this.settings.speed.min + Math.random() * (this.settings.speed.max - this.settings.speed.min);
+        this.size = this.settings.appearance.size.min + Math.random() * (this.settings.appearance.size.max - this.settings.appearance.size.min);
+        this.speed = this.settings.behaviour.movement.speed.min + Math.random() * (this.settings.behaviour.movement.speed.max - this.settings.behaviour.movement.speed.min);
         this.direction = Math.random() * 2 * Math.PI;
-        this.ttl = this.settings.ttl.min + Math.random() * (this.settings.ttl.max - this.settings.ttl.min);
+        this.ttl = this.settings.behaviour.ttl.min + Math.random() * (this.settings.behaviour.ttl.max - this.settings.behaviour.ttl.min);
         
         // Initialize velocity components
         this.vx = this.speed * Math.cos(this.direction);
@@ -29,25 +29,25 @@ class Particle {
         const position = spawnPosition[Math.floor(Math.random() * spawnPosition.length)];
 
         let gridX, gridY;
-        if (this.settings.spawnGrid.columns > 0) {
+        if (this.settings.behaviour.spawning.spawnGrid.columns > 0) {
             // Calculate grid size based on canvas dimensions and spawning offset
-            const gridSizeX = (canvas.width - 2 * this.settings.spawningOffset.x) / this.settings.spawnGrid.columns;
+            const gridSizeX = (canvas.width - 2 * this.settings.behaviour.spawning.spawningOffset.x) / this.settings.behaviour.spawning.spawnGrid.columns;
             
             // Pick a random grid cell
-            const randomX = Math.floor(Math.random() * this.settings.spawnGrid.columns);
+            const randomX = Math.floor(Math.random() * this.settings.behaviour.spawning.spawnGrid.columns);
 
             // Calculate the spawn position based on the grid cell
-            gridX = this.settings.spawningOffset.x + randomX * gridSizeX + gridSizeX / 2;
+            gridX = this.settings.behaviour.spawning.spawningOffset.x + randomX * gridSizeX + gridSizeX / 2;
         }
-        if (this.settings.spawnGrid.rows > 0) {
+        if (this.settings.behaviour.spawning.spawnGrid.rows > 0) {
             // Calculate grid size based on canvas dimensions and spawning offset
-            const gridSizeY = (canvas.height - 2 * this.settings.spawningOffset.y) / this.settings.spawnGrid.rows;
+            const gridSizeY = (canvas.height - 2 * this.settings.behaviour.spawning.spawningOffset.y) / this.settings.behaviour.spawning.spawnGrid.rows;
 
             // Pick a random grid cell
-            const randomY = Math.floor(Math.random() * this.settings.spawnGrid.rows);
+            const randomY = Math.floor(Math.random() * this.settings.behaviour.spawning.spawnGrid.rows);
 
             // Calculate the spawn position based on the grid cell
-            gridY = this.settings.spawningOffset.y + randomY * gridSizeY + gridSizeY / 2;
+            gridY = this.settings.behaviour.spawning.spawningOffset.y + randomY * gridSizeY + gridSizeY / 2;
         }
 
 
@@ -55,96 +55,96 @@ class Particle {
         let x, y;
         switch (position) {
             case 'random':
-                x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width + (Math.random() < 0.5 ? this.settings.spawningOffset : -this.settings.spawningOffset);
-                y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height + (Math.random() < 0.5 ? this.settings.spawningOffset : -this.settings.spawningOffset);
+                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset : -this.settings.behaviour.spawning.spawningOffset);
+                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset : -this.settings.behaviour.spawning.spawningOffset);
                 break;
             case 'center':
-                x = canvas.width / 2 + Math.random() * (Math.random() < 0.5 ? this.settings.spawningOffset.x : -this.settings.spawningOffset.x);
-                y = canvas.height / 2 + Math.random() * (Math.random() < 0.5 ? this.settings.spawningOffset.y : -this.settings.spawningOffset.y);
+                x = canvas.width / 2 + Math.random() * (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
+                y = canvas.height / 2 + Math.random() * (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.y : -this.settings.behaviour.spawning.spawningOffset.y);
                 break;
             case 'top-left':
-                x = this.settings.spawningOffset.x;
-                y = this.settings.spawningOffset.y;
+                x = this.settings.behaviour.spawning.spawningOffset.x;
+                y = this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'top-right':
-                x = canvas.width - this.settings.spawningOffset.x;
-                y = this.settings.spawningOffset.y;
+                x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                y = this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'bottom-left':
-                x = this.settings.spawningOffset.x;
-                y = canvas.height - this.settings.spawningOffset.y;
+                x = this.settings.behaviour.spawning.spawningOffset.x;
+                y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'bottom-right':
-                x = canvas.width - this.settings.spawningOffset.x;
-                y = canvas.height - this.settings.spawningOffset.y;
+                x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'top':
                 x = canvas.width / 2;
-                y = this.settings.spawningOffset.y;
+                y = this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'bottom':
                 x = canvas.width / 2;
-                y = canvas.height - this.settings.spawningOffset.y;
+                y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'left':
-                x = this.settings.spawningOffset.x;
+                x = this.settings.behaviour.spawning.spawningOffset.x;
                 y = canvas.height / 2;
                 break;
             case 'right':
-                x = canvas.width - this.settings.spawningOffset.x;
+                x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
                 y = canvas.height / 2;
                 break;
             case 'top-edge':
-                x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
-                y = this.settings.spawningOffset.y;
+                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
+                y = this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'bottom-edge':
-                x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
-                y = canvas.height - this.settings.spawningOffset.y;
+                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
+                y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'left-edge':
-                x = this.settings.spawningOffset.x;
-                y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
+                x = this.settings.behaviour.spawning.spawningOffset.x;
+                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
                 break;
             case 'right-edge':
-                x = canvas.width - this.settings.spawningOffset.x;
-                y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
+                x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
                 break;
             case 'random-edge':
                 const edge = Math.floor(Math.random() * 4);
                 if (edge === 0) { // Top edge
-                    x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
-                    y = this.settings.spawningOffset.y;
+                    x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
+                    y = this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (edge === 1) { // Bottom edge
-                    x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
-                    y = canvas.height - this.settings.spawningOffset.y;
+                    x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width;
+                    y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (edge === 2) { // Left edge
-                    x = this.settings.spawningOffset.x;
-                    y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
+                    x = this.settings.behaviour.spawning.spawningOffset.x;
+                    y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
                 } else { // Right edge
-                    x = canvas.width - this.settings.spawningOffset.x;
-                    y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
+                    x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                    y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height;
                 }
                 break;
             case 'random-corner':
                 const corner = Math.floor(Math.random() * 4);
                 if (corner === 0) { // Top-left corner
-                    x = this.settings.spawningOffset.x;
-                    y = this.settings.spawningOffset.y;
+                    x = this.settings.behaviour.spawning.spawningOffset.x;
+                    y = this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (corner === 1) { // Top-right corner
-                    x = canvas.width - this.settings.spawningOffset.x;
-                    y = this.settings.spawningOffset.y;
+                    x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                    y = this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (corner === 2) { // Bottom-left corner
-                    x = this.settings.spawningOffset.x;
-                    y = canvas.height - this.settings.spawningOffset.y;
+                    x = this.settings.behaviour.spawning.spawningOffset.x;
+                    y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 } else { // Bottom-right corner
-                    x = canvas.width - this.settings.spawningOffset.x;
-                    y = canvas.height - this.settings.spawningOffset.y;
+                    x = canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
+                    y = canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 }
                 break;
             default:
-                x = this.settings.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width + (Math.random() < 0.5 ? this.settings.spawningOffset.x : -this.settings.spawningOffset.x);
-                y = this.settings.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height + (Math.random() < 0.5 ? this.settings.spawningOffset.y : -this.settings.spawningOffset.y);
+                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
+                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.y : -this.settings.behaviour.spawning.spawningOffset.y);
                 break;
         }
 
@@ -153,8 +153,8 @@ class Particle {
 
     getDirection() {
         let dir = this.direction;
-        if (this.settings.direction !== 'random') {
-            switch (this.settings.direction) {
+        if (this.settings.behaviour.movement.direction !== 'random') {
+            switch (this.settings.behaviour.movement.direction) {
                 case 'up':
                     dir = -Math.PI / 2; // 90 degrees in radians
                     break;
@@ -189,10 +189,10 @@ class Particle {
                     break;
                 case 'corner':
                     const corners = [
-                        { x: -this.size + this.settings.spawningOffset.x, y: -this.size + this.settings.spawningOffset.y },
-                        { x: canvas.width + this.size - this.settings.spawningOffset.x, y: -this.size + this.settings.spawningOffset.y },
-                        { x: -this.size + this.settings.spawningOffset.x, y: canvas.height + this.size - this.settings.spawningOffset.y },
-                        { x: canvas.width + this.size - this.settings.spawningOffset.x, y: canvas.height + this.size - this.settings.spawningOffset.y }
+                        { x: -this.size + this.settings.behaviour.spawning.spawningOffset.x, y: -this.size + this.settings.behaviour.spawning.spawningOffset.y },
+                        { x: canvas.width + this.size - this.settings.behaviour.spawning.spawningOffset.x, y: -this.size + this.settings.behaviour.spawning.spawningOffset.y },
+                        { x: -this.size + this.settings.behaviour.spawning.spawningOffset.x, y: canvas.height + this.size - this.settings.behaviour.spawning.spawningOffset.y },
+                        { x: canvas.width + this.size - this.settings.behaviour.spawning.spawningOffset.x, y: canvas.height + this.size - this.settings.behaviour.spawning.spawningOffset.y }
                     ];
                     const closestCorner = corners.reduce((prev, curr) => {
                         const prevDist = Math.hypot(prev.x - this.x, prev.y - this.y);
@@ -213,14 +213,14 @@ class Particle {
     }
 
     respawn(canvas) {
-        const { x, y } = this.getSpawnPosition(this.settings.respawnPositions, canvas);
+        const { x, y } = this.getSpawnPosition(this.settings.behaviour.spawning.respawn.respawnPositions, canvas);
         this.x = x;
         this.y = y;
         
-        this.size = this.settings.size.min + Math.random() * (this.settings.size.max - this.settings.size.min);
-        this.speed = this.settings.speed.min + Math.random() * (this.settings.speed.max - this.settings.speed.min);
+        this.size = this.settings.appearance.size.min + Math.random() * (this.settings.appearance.size.max - this.settings.appearance.size.min);
+        this.speed = this.settings.behaviour.movement.speed.min + Math.random() * (this.settings.behaviour.movement.speed.max - this.settings.behaviour.movement.speed.min);
         this.direction = Math.random() * 2 * Math.PI;
-        this.ttl = this.settings.ttl.min + Math.random() * (this.settings.ttl.max - this.settings.ttl.min);
+        this.ttl = this.settings.behaviour.ttl.min + Math.random() * (this.settings.behaviour.ttl.max - this.settings.behaviour.ttl.min);
 
         // Initialize velocity components
         this.vx = this.speed * Math.cos(this.direction);
@@ -325,7 +325,7 @@ class Particle {
         this.settings = particleSettings;
 
         // Fade in and out based on isDead state
-        if (!this.settings.fading.enabled) {
+        if (!this.settings.appearance.fading.enabled) {
             if (!this.isDead) {
                 this.opacity = 1; // Fully visible
             } else {
@@ -334,17 +334,17 @@ class Particle {
         } else {
             if (!this.isDead && this.opacity < 1) {
                 // Fade in
-                this.opacity = Math.min(1, ((Date.now() - this.SpawnedAt) / 1000) / this.settings.fading.fadeInTime);
+                this.opacity = Math.min(1, ((Date.now() - this.SpawnedAt) / 1000) / this.settings.appearance.fading.fadeInTime);
             } else if (this.isDead && this.opacity > 0) {
                 // Fade out
-                this.opacity = Math.max(0, 1 - ((Date.now() - this.DiedAt) / 1000) / this.settings.fading.fadeOutTime);
+                this.opacity = Math.max(0, 1 - ((Date.now() - this.DiedAt) / 1000) / this.settings.appearance.fading.fadeOutTime);
             }
         }
 
-        // Respawn logic
+        // Respawn / Destroy logic
         if(this.isDead && this.opacity === 0) {
-            // Destroy particle if there are too many particles
-            if (this.isDestroyed || particles.length > maxParticles) {
+            // Destroy particles (too many / no respawning)
+            if (!this.settings.behaviour.spawning.respawn.enabled || this.isDestroyed || particles.length > maxParticles) {
                 this.isDestroyed = true;
                 return;
             }
@@ -363,14 +363,14 @@ class Particle {
         this.y = this.y + (this.vy * deltaTime);
 
         // Handle particle-to-particle collisions if enabled
-        if (this.settings.bounceOffParticles && !this.isDead) {
+        if (this.settings.behaviour.bounceOffParticles && !this.isDead) {
             for (const otherParticle of particles) {
                 this.handleParticleCollision(otherParticle);
             }
         }
 
         // Handle bouncing off edges if enabled
-        if (this.settings.bounceOffEdges) {
+        if (this.settings.behaviour.bounceOffEdges) {
             let bounced = false;
             
             // Store original speed to preserve it after bouncing
@@ -417,17 +417,17 @@ class Particle {
 
         // Kill particle if it exceeds TTL or goes out of bounds
         if (!this.isDead) {
-            if (this.ttl > 0 && this.ttl < this.timeLived / 1000) {
+            if (this.settings.behaviour.ttl.enabled && this.ttl < this.timeLived / 1000) {
                 this.DiedAt = Date.now();
                 this.isDead = true;
             }
             
             // Only kill particle for going out of bounds if bouncing is disabled
-            if (!this.settings.bounceOffEdges) {
-                const topEdge = -this.size + this.settings.spawningOffset.y;
-                const bottomEdge = canvas.height + this.size - this.settings.spawningOffset.y;
-                const leftEdge = -this.size + this.settings.spawningOffset.x;
-                const rightEdge = canvas.width + this.size - this.settings.spawningOffset.x;
+            if (!this.settings.behaviour.bounceOffEdges) {
+                const topEdge = -this.size + this.settings.behaviour.spawning.spawningOffset.y;
+                const bottomEdge = canvas.height + this.size - this.settings.behaviour.spawning.spawningOffset.y;
+                const leftEdge = -this.size + this.settings.behaviour.spawning.spawningOffset.x;
+                const rightEdge = canvas.width + this.size - this.settings.behaviour.spawning.spawningOffset.x;
 
                 if (this.x < leftEdge || this.x > rightEdge || this.y < topEdge || this.y > bottomEdge) {
                     this.DiedAt = Date.now();
@@ -441,15 +441,15 @@ class Particle {
     draw(ctx) {
         ctx.save();
 
-        ctx.fillStyle = this.settings.color;
-        ctx.strokeStyle = this.settings.color;  
-        ctx.globalAlpha = this.settings.opacity * this.opacity;
-        if (this.settings.shadow.enabled) {
-            ctx.shadowColor = this.settings.shadow.color;
-            ctx.shadowBlur = this.settings.shadow.radius;
+        ctx.fillStyle = this.settings.appearance.color;
+        ctx.strokeStyle = this.settings.appearance.color;  
+        ctx.globalAlpha = this.settings.appearance.opacity * this.opacity;
+        if (this.settings.appearance.shadow.enabled) {
+            ctx.shadowColor = this.settings.appearance.shadow.color;
+            ctx.shadowBlur = this.settings.appearance.shadow.radius;
         }
 
-        const shape = this.settings.shape;
+        const shape = this.settings.appearance.shape;
         const r = this.size;
         const x = this.x;
         const y = this.y;

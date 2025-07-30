@@ -2,65 +2,97 @@ class ParticleSystem {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+
         this.particles = [];
-        this.connections = new Connections(this.connectionSettings);
         this.dying = 0;
+        this.connections = new Connections(this.connectionSettings);
+
         this.frameTimes = [];
         this.lastTime = 0;
 
         this.settings = {
-            maxParticles: 300,
+            maxParticles: 100,
             spawnAmount: 10,
-            spawnedTTL: { min: 10, max: 15 } 
-        };
-
-        this.particleSettings = {
-            size: { min: 8, max: 8 },
-            speed: { min: 150, max: 250 },
-            direction: 'down',
-            ttl: { min: 0, max: 0 },
-            opacity: 1,
-            color: '#00FF41',
-            shape: 'char',
-            shadow: { enabled: true, color: '#00FF41', radius: 5 },
-            initialSpawnPosition: ['random'],
-            respawnPositions: ['top-edge'],
-            spawningOffset: { x: -100, y: -100 },
-            spawnGrid: { columns: 30, rows: 30 },
-            fading: { enabled: false, fadeInTime: 0.50, fadeOutTime: 0.25 }, // Fading settings
-            bounceOffEdges: false,
-            bounceOffParticles: true
-        }
-
-        this.connectionSettings = {
-            enabled: false,
-            distance: 125,
-            maxConnections: 3,
-            color: '#00FF41',
-            opacity: 1,
-            lineWidth: 2,
-            lineStyle: 'dashed',
-            shadow: { enabled: true, color: '#00FF41', radius: 8 }
-        }
-
-        // Background settings
-        this.backgroundSettings = {
-            type: 'color',           // 'color' or 'gradient'
-            color: '#0a0a0aff',        // Solid background color
-            gradient: {
-                type: 'linear',      // 'linear' or 'radial'
-                direction: 'vertical', // 'horizontal', 'vertical', 'diagonal'
-                colors: [
-                    { stop: 0, color: '#1a1a2e' },
-                    { stop: 0.5, color: '#000511ff' },
-                    { stop: 1, color: '#000103ff' }
-                ]
+            spawnedTTL: { min: 10, max: 15 },
+            clearCanvas: true,
+            showDebugInfo: true,
+            backgroundSettings: {
+                type: 'color',           // 'color' or 'gradient'
+                color: '#070016ff',        // Solid background color
+                gradient: {
+                    type: 'linear',      // 'linear' or 'radial'
+                    direction: 'vertical', // 'horizontal', 'vertical', 'diagonal'
+                    colors: [
+                        { stop: 0, color: '#1a1a2e' },
+                        { stop: 0.5, color: '#000511ff' },
+                        { stop: 1, color: '#000103ff' }
+                    ]
+                }
             }
         };
 
-        // Particle-to-particle interaction settings
+        this.particleSettings = {
+            appearance: { 
+                size: { min: 8, max: 8 }, 
+                color: '#00ff40', 
+                opacity: 1,
+                shape: 'circle', 
+                shadow: { 
+                    enabled: true, 
+                    color: '#00FF41', 
+                    radius: 5 
+                },
+                fading: { 
+                    enabled: true, 
+                    fadeInTime: 0.50, 
+                    fadeOutTime: 0.25 
+                },
+            },
+            behaviour: {
+                movement: {
+                    enabled: true,
+                    speed: { min: 150, max: 250 }, 
+                    direction: 'random' 
+                },
+                spawning: {
+                    autospawn: true, // Automatically spawn particles with init
+                    initialSpawnPosition: ['random'],
+                    spawningOffset: { x: -100, y: -100 },
+                    spawnGrid: { columns: 30, rows: 30 },
+                    respawn: {
+                        enabled: true, // Enable respawning of particles
+                        respawnPositions: ['random']
+                    }
+                },
+                ttl: { 
+                    enabled: true,
+                    min: 5, 
+                    max: 10 
+                },
+                bounceOffEdges: false,
+                bounceOffParticles: true
+            }
+        }
+
+        this.connectionSettings = {
+            enabled: true,
+            distance: 125, // Maximum distance for connections
+            maxConnections: 3, // Maximum number of connections per particle
+            appearance: {
+                color: '#00ff40',
+                opacity: 1,
+                lineWidth: 2,
+                lineStyle: 'double', // 'solid', 'dashed', 'dotted', or 'double'
+                shadow: { 
+                    enabled: true, 
+                    color: '#00ff40', 
+                    radius: 8 
+                }
+            },
+        }
+
         this.particleInteractionSettings = {
-            enabled: false,
+            enabled: true,
             attraction: { force: 75, radius: 130 }, // Force strength for particle attraction
             repulsion: { force: 140, radius: 35 },  // Force strength for particle repulsion
             mode: 'both' // 'attract', 'repel', or 'both'
@@ -73,7 +105,13 @@ class ParticleSystem {
     setupMouseInteraction() {
         this.canvas.addEventListener('click', (event) => {
             for (let i = 0; i < this.settings.spawnAmount; i++) {
-                this.spawnParticleAtPosition(event.clientX, event.clientY);
+                // Get canvas bounding rectangle to convert screen coordinates to canvas coordinates
+                const rect = this.canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                // Use the addParticleAt method for consistency
+                this.addParticleAt(x, y);
             }
         });
         
@@ -83,16 +121,6 @@ class ParticleSystem {
         });
     }
 
-    spawnParticleAtPosition(clientX, clientY) {
-        // Get canvas bounding rectangle to convert screen coordinates to canvas coordinates
-        const rect = this.canvas.getBoundingClientRect();
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-        
-        // Use the addParticleAt method for consistency
-        this.addParticleAt(x, y);
-    }
-
     addParticle() {
         if (this.particles.length >= this.settings.maxParticles) return;
 
@@ -100,7 +128,6 @@ class ParticleSystem {
         this.particles.push(particle);
     }
 
-    // Add particle with custom position (used for mouse clicks)
     addParticleAt(x, y) {
         const particle = new Particle({...this.particleSettings, ttl: this.settings.spawnedTTL}, this.canvas);
         particle.x = x;
@@ -122,7 +149,7 @@ class ParticleSystem {
             if (particle.isDestroyed) {
                 this.particles.splice(i, 1);
             }
-            if (this.particleSettings.ttl.min === 0 && this.particleSettings.ttl.max === 0 && this.particleSettings.bounceOffEdges) {
+            if (this.particleSettings.behaviour.ttl.min === 0 && this.particleSettings.behaviour.ttl.max === 0 && this.particleSettings.bounceOffEdges) {
                 this.dying--;
             }
         }
@@ -194,26 +221,26 @@ class ParticleSystem {
         }
     }
 
-    drawParticles() {
-        // Draw background first
-        this.drawBackground();
-        
+    drawParticles(deltaTime) {
+        this.updateParticles(deltaTime);
         for (const particle of this.particles) {
             particle.draw(this.ctx);
         }
+    }
 
-        // Draw FPS
-        this.drawFPS();
+    drawConnections() {
+        this.connections.update(this.particles, this.connectionSettings);
+        this.connections.draw(this.ctx);
     }
 
     drawBackground() {
         this.ctx.save();
         
-        if (this.backgroundSettings.type === 'color') {
+        if (this.settings.backgroundSettings.type === 'color') {
             // Solid color background
-            this.ctx.fillStyle = this.backgroundSettings.color;
+            this.ctx.fillStyle = this.settings.backgroundSettings.color;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        } else if (this.backgroundSettings.type === 'gradient') {
+        } else if (this.settings.backgroundSettings.type === 'gradient') {
             // Gradient background
             const gradient = this.createGradient();
             this.ctx.fillStyle = gradient;
@@ -224,7 +251,7 @@ class ParticleSystem {
     }
 
     createGradient() {
-        const settings = this.backgroundSettings.gradient;
+        const settings = this.settings.backgroundSettings.gradient;
         let gradient;
         
         if (settings.type === 'linear') {
@@ -271,35 +298,20 @@ class ParticleSystem {
         return gradient;
     }
 
-    // Convenience methods for changing backgrounds
-    setBackgroundColor(color) {
-        this.backgroundSettings.type = 'color';
-        this.backgroundSettings.color = color;
-    }
-
-    setBackgroundGradient(type, direction, colors) {
-        this.backgroundSettings.type = 'gradient';
-        this.backgroundSettings.gradient.type = type;
-        this.backgroundSettings.gradient.direction = direction;
-        this.backgroundSettings.gradient.colors = colors;
-    }
-
-    drawFPS() {
+    drawDebugInfo() {
         this.ctx.save();
         this.ctx.font = '16px Arial';
         this.ctx.fillStyle = '#ffffff';
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
         this.ctx.fillText(`FPS: ${this.fps || 0}`, 10, 10);
-        this.ctx.fillText(`Particles: ${this.particles.length}`, 10, 30);
+        this.ctx.fillText(`Particles: ${this.particles.length} / ${this.settings.maxParticles}`, 10, 30);
         this.ctx.restore();
     }
 
     animate(currentTime = 0) {
-        if (this.lastTime === 0) {
-            this.lastTime = currentTime;
-        }
-        
+        // Delta time calculation
+        if (this.lastTime === 0) this.lastTime = currentTime;
         const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
         this.lastTime = currentTime;
 
@@ -308,21 +320,26 @@ class ParticleSystem {
         if (this.frameTimes.length > 30) this.frameTimes.shift(); 
         this.fps = Math.round(1 / (this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length));
 
-        this.updateParticles(deltaTime);
-        this.connections.update(this.particles, this.connectionSettings);
+        // Draw everything
+        if (this.settings.clearCanvas) this.drawBackground();
+        this.drawConnections();
+        this.drawParticles(deltaTime);
+        if (this.settings.showDebugInfo) this.drawDebugInfo();
 
-        this.drawParticles();
-        this.connections.draw(this.ctx);
-
-
-        
+        // Request next frame
         requestAnimationFrame((time) => this.animate(time));
     }
 
     init() {
+        this.drawBackground();
         this.animate();
-        for (let i = 0; i < this.settings.maxParticles; i++) {
-            this.addParticle();
+
+        // Initial particle spawn
+        if (this.particleSettings.behaviour.spawning.autospawn) {
+            for (let i = 0; i < this.settings.maxParticles; i++) {
+                this.addParticle();
+            }
         }
+
     }
 }
