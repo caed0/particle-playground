@@ -8,7 +8,7 @@ class ParticleSystem {
         this.frameTimes = [];
 
         this.settings = {
-            maxParticles: 500,
+            maxParticles: 300,
             spawnAmount: 10,
             spawnedTTL: { min: 10, max: 15 } 
         };
@@ -21,14 +21,12 @@ class ParticleSystem {
             opacity: 1,
             color: '#00FF41',
             shape: 'char',
-            shadowBlurRadius: 5,
-            shadowBlurColor: '#00FF41',
+            shadow: { enabled: true, color: '#00FF41', radius: 5 },
             initialSpawnPosition: ['random'],
             respawnPositions: ['top-edge'],
-            spawningOffset: 100,
-            spawnGrid: 0,
-            fadeInTime: 0.50,
-            fadeOutTime: 0.25,
+            spawningOffset: { x: -100, y: -100 },
+            spawnGrid: { columns: 30, rows: 30 },
+            fading: { enabled: false, fadeInTime: 0.50, fadeOutTime: 0.25 }, // Fading settings
             bounceOffEdges: false,
             bounceOffParticles: true
         }
@@ -41,8 +39,7 @@ class ParticleSystem {
             opacity: 1,
             lineWidth: 2,
             lineStyle: 'dashed',
-            shadowBlurRadius: 8,
-            shadowBlurColor: '#00FF41'
+            shadow: { enabled: true, color: '#00FF41', radius: 8 }
         }
 
         // Background settings
@@ -65,11 +62,9 @@ class ParticleSystem {
         // Particle-to-particle interaction settings
         this.particleInteractionSettings = {
             enabled: false,
-            attractionForce: 75,      // Force strength for particle attraction
-            repulsionForce: 140,      // Force strength for particle repulsion
-            attractionRadius: 130,     // Distance for attraction between particles
-            repulsionRadius: 35,      // Distance for repulsion between particles
-            mode: 'both'              // 'attract', 'repel', or 'both'
+            attraction: { force: 75, radius: 130 }, // Force strength for particle attraction
+            repulsion: { force: 140, radius: 35 },  // Force strength for particle repulsion
+            mode: 'both' // 'attract', 'repel', or 'both'
         };
         
         // Mouse interaction setup
@@ -152,7 +147,7 @@ class ParticleSystem {
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 // Skip if particles are too far apart
-                if (distance > settings.attractionRadius || distance < 1) continue;
+                if (distance > settings.attraction.radius || distance < 1) continue;
                 
                 // Normalize direction vector
                 const normalizedDx = dx / distance;
@@ -162,14 +157,14 @@ class ParticleSystem {
                 let forceDirection = 1; // 1 for attraction, -1 for repulsion
                 
                 // Determine force type based on distance and mode
-                if (distance <= settings.repulsionRadius && (settings.mode === 'repel' || settings.mode === 'both')) {
+                if (distance <= settings.repulsion.radius && (settings.mode === 'repel' || settings.mode === 'both')) {
                     // Repulsion - particles push away from each other
-                    forceStrength = settings.repulsionForce * (1 - distance / settings.repulsionRadius);
+                    forceStrength = settings.repulsion.force * (1 - distance / settings.repulsion.radius);
                     forceDirection = -1;
-                } else if (distance > settings.repulsionRadius && distance <= settings.attractionRadius && (settings.mode === 'attract' || settings.mode === 'both')) {
+                } else if (distance > settings.repulsion.radius && distance <= settings.attraction.radius && (settings.mode === 'attract' || settings.mode === 'both')) {
                     // Attraction - particles pull toward each other
-                    const attractionStrength = (distance - settings.repulsionRadius) / (settings.attractionRadius - settings.repulsionRadius);
-                    forceStrength = settings.attractionForce * (1 - attractionStrength);
+                    const attractionStrength = (distance - settings.repulsion.radius) / (settings.attraction.radius - settings.repulsion.radius);
+                    forceStrength = settings.attraction.force * (1 - attractionStrength);
                     forceDirection = 1;
                 }
                 

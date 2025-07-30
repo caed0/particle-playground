@@ -97,9 +97,9 @@ class Connections {
         ctx.lineWidth = this.settings.lineWidth;
 
         // Only set shadow if needed
-        if (this.settings.shadowBlurRadius > 0) {
-            ctx.shadowColor = this.settings.shadowBlurColor;
-            ctx.shadowBlur = this.settings.shadowBlurRadius;
+        if (this.settings.shadow.enabled) {
+            ctx.shadowColor = this.settings.shadow.color;
+            ctx.shadowBlur = this.settings.shadow.radius;
         }
 
         // Draw connections based on line style
@@ -128,7 +128,7 @@ class Connections {
         }
         
         // Reset shadow and line dash
-        if (this.settings.shadowBlurRadius > 0) {
+        if (this.settings.shadow.enabled) {
             ctx.shadowBlur = 0;
         }
         ctx.setLineDash([]);
