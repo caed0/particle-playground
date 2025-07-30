@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles.js Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    
+    <script src="../Particle.js"></script>
+    <script src="../Connections.js"></script>
+    <script src="../ParticleSystem.js"></script>
+    <script>
+        // Initialize the particle system
+        const canvas = document.getElementById('particleCanvas');
+        const particleSystem = new ParticleSystem(canvas);
+        
+        // Set canvas size to full window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        // Initial resize and window resize listener
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Start the particle system
+        particleSystem.init();
+    </script>
+</body>
+</html>
