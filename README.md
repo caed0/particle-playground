@@ -1,4 +1,4 @@
-# Particle System
+# Particle Playground
 
 A customizable particle system with interactive particles, connections, and various visual effects.
 
