@@ -4,18 +4,24 @@ class ParticleSystem {
         this.ctx = canvas.getContext('2d');
 
         this.particles = [];
-        this.dying = 0;
         this.connections = new Connections(this.connectionSettings);
 
         this.frameTimes = [];
         this.lastTime = 0;
 
         this.settings = {
-            maxParticles: 100,
-            spawnAmount: 10,
-            spawnedTTL: { min: 10, max: 15 },
+            initialParticles: 100, // Initial number of particles
+            initialSpawnPositions: ['random'],
             clearCanvas: true,
             showDebugInfo: true,
+            dynamicAdjustment: {
+                autoSpawn: true, // Automatically spawn particles
+                autoDestroy: true, // Automatically destroy particles
+                minParticles: 50, // Minimum number of particles
+                maxParticles: 200, // Maximum number of particles
+                adjustmentInterval: 100 // Interval in milliseconds to adjust particle count
+            },
+        
             backgroundSettings: {
                 type: 'color',           // 'color' or 'gradient'
                 color: '#070016ff',        // Solid background color
@@ -44,38 +50,34 @@ class ParticleSystem {
                 },
                 fading: { 
                     enabled: true, 
-                    fadeInTime: 0.50, 
-                    fadeOutTime: 0.25 
+                    fadeInTime: 1, 
+                    fadeOutTime: 1 
                 },
             },
             behaviour: {
                 movement: {
                     enabled: true,
-                    speed: { min: 150, max: 250 }, 
+                    speed: { min: 75, max: 150 }, 
                     direction: 'random' 
                 },
                 spawning: {
-                    autospawn: true, // Automatically spawn particles with init
-                    initialSpawnPosition: ['random'],
+                    spawnPositions: ['random'],
                     spawningOffset: { x: -100, y: -100 },
                     spawnGrid: { columns: 30, rows: 30 },
-                    respawn: {
-                        enabled: true, // Enable respawning of particles
-                        respawnPositions: ['random']
-                    }
+                    respawn: true
                 },
                 ttl: { 
-                    enabled: true,
+                    enabled: false,
                     min: 5, 
                     max: 10 
                 },
-                bounceOffEdges: false,
+                bounceOffEdges: true,
                 bounceOffParticles: true
             }
         }
 
         this.connectionSettings = {
-            enabled: true,
+            enabled: false,
             distance: 125, // Maximum distance for connections
             maxConnections: 3, // Maximum number of connections per particle
             appearance: {
@@ -93,9 +95,18 @@ class ParticleSystem {
 
         this.particleInteractionSettings = {
             enabled: true,
-            attraction: { force: 75, radius: 130 }, // Force strength for particle attraction
+            attraction: { force: 200, radius: 130 }, // Force strength for particle attraction
             repulsion: { force: 140, radius: 35 },  // Force strength for particle repulsion
-            mode: 'both' // 'attract', 'repel', or 'both'
+            mode: 'attract' // 'attract', 'repel', or 'both'
+        };
+
+        this.mouseInteractionSettings = {
+            spawn: {
+                enabled: true,
+                amount: 5, // Number of particles to spawn per interaction
+                continuous: true, // Whether to spawn particles continuously while dragging
+                delay: 40, // Minimum time between spawns in milliseconds
+            },
         };
         
         // Mouse interaction setup
@@ -103,37 +114,66 @@ class ParticleSystem {
     }
 
     setupMouseInteraction() {
-        this.canvas.addEventListener('click', (event) => {
-            for (let i = 0; i < this.settings.spawnAmount; i++) {
-                // Get canvas bounding rectangle to convert screen coordinates to canvas coordinates
-                const rect = this.canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
+        let isMousePressed = false;
+        let lastSpawnTime = 0;
 
-                // Use the addParticleAt method for consistency
-                this.addParticleAt(x, y);
-            }
+        this.canvas.addEventListener('mousedown', (event) => {
+            isMousePressed = true;
+            this.spawnParticlesAtMouse(event);
         });
-        
+
+        this.canvas.addEventListener('mouseup', () => {
+            isMousePressed = false;
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            isMousePressed = false;
+        });
+
+        this.canvas.addEventListener('mousemove', (event) => {
+            if (!this.mouseInteractionSettings.spawn.continuous || !isMousePressed) return;
+            const time = Date.now();
+            if (time - lastSpawnTime < this.mouseInteractionSettings.spawn.delay) return;
+            this.spawnParticlesAtMouse(event);
+            lastSpawnTime = time;
+        });
+
         // Prevent context menu on right click for better UX
         this.canvas.addEventListener('contextmenu', (event) => {
             event.preventDefault();
         });
     }
 
-    addParticle() {
-        if (this.particles.length >= this.settings.maxParticles) return;
+    spawnParticlesAtMouse(event) {
+            if (!this.mouseInteractionSettings.spawn.enabled) return;
 
-        const particle = new Particle(this.particleSettings, this.canvas);
-        this.particles.push(particle);
+            // Get canvas bounding rectangle to convert screen coordinates to canvas coordinates
+            const rect = this.canvas.getBoundingClientRect();
+            const position = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+
+            // Add particles at the mouse position
+            for (let i = 0; i < this.mouseInteractionSettings.spawn.amount; i++) {
+                this.addParticle({ position });
+            }
     }
 
-    addParticleAt(x, y) {
-        const particle = new Particle({...this.particleSettings, ttl: this.settings.spawnedTTL}, this.canvas);
-        particle.x = x;
-        particle.y = y;
+    addParticle(settingsOverride) {
+        // Override spawn positions
+        let newSettings = this.particleSettings;
+        if (settingsOverride.spawnPositions && settingsOverride.spawnPositions.length > 0) {
+            newSettings = structuredClone(this.particleSettings);
+            newSettings.behaviour.spawning.spawnPositions = settingsOverride.spawnPositions;
+        }
+
+        const particle = new Particle(newSettings, this.canvas);
+
+        // Override position
+        if (settingsOverride.position) {
+            particle.x = settingsOverride.position.x;
+            particle.y = settingsOverride.position.y;
+        }
+
         this.particles.push(particle);
-        return true; // Indicate successful spawn
     }
 
     updateParticles(deltaTime) {
@@ -144,14 +184,14 @@ class ParticleSystem {
         
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
-            particle.update(this.particleSettings, this.canvas, deltaTime, this.particles, this.settings.maxParticles);
 
-            if (particle.isDestroyed) {
+            // Clean up destroyed particles
+            if (particle.state === 'destroyed') {
                 this.particles.splice(i, 1);
+                continue;
             }
-            if (this.particleSettings.behaviour.ttl.min === 0 && this.particleSettings.behaviour.ttl.max === 0 && this.particleSettings.bounceOffEdges) {
-                this.dying--;
-            }
+
+            particle.update(this.particleSettings, deltaTime, this.particles);
         }
     }
 
@@ -196,7 +236,7 @@ class ParticleSystem {
                 
                 if (forceStrength > 0) {
                     // Apply opacity-based force scaling - weaker forces when particles are fading
-                    const opacityFactor = particleA.opacity * particleB.opacity;
+                    const opacityFactor = particleA.life * particleB.life;
                     
                     // Apply force to both particles (Newton's third law)
                     const forceX = normalizedDx * forceStrength * forceDirection * deltaTime * opacityFactor;
@@ -304,8 +344,10 @@ class ParticleSystem {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText(`FPS: ${this.fps || 0}`, 10, 10);
-        this.ctx.fillText(`Particles: ${this.particles.length} / ${this.settings.maxParticles}`, 10, 30);
+        this.ctx.fillText(`Average FPS: ${this.fps || 0}`, 10, 10);
+        this.ctx.fillText(`Min Particles: ${this.settings.dynamicAdjustment.minParticles}`, 10, 30);
+        this.ctx.fillText(`Max Particles: ${this.settings.dynamicAdjustment.maxParticles}`, 10, 50);
+        this.ctx.fillText(`Current Particles: ${this.particles.length}`, 10, 70);
         this.ctx.restore();
     }
 
@@ -320,7 +362,7 @@ class ParticleSystem {
         if (this.frameTimes.length > 30) this.frameTimes.shift(); 
         this.fps = Math.round(1 / (this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length));
 
-        // Draw everything
+        // Draw
         if (this.settings.clearCanvas) this.drawBackground();
         this.drawConnections();
         this.drawParticles(deltaTime);
@@ -334,12 +376,35 @@ class ParticleSystem {
         this.drawBackground();
         this.animate();
 
-        // Initial particle spawn
-        if (this.particleSettings.behaviour.spawning.autospawn) {
-            for (let i = 0; i < this.settings.maxParticles; i++) {
-                this.addParticle();
-            }
+        // Initial particle spawning
+        for (let i = 0; i < this.settings.initialParticles; i++) {
+            this.addParticle({ spawnPositions: this.settings.initialSpawnPositions });
         }
 
+        // Automatically adjust particle count
+        setInterval(() => {
+            // Automatically spawn particles if particle count is below max
+            if (this.settings.dynamicAdjustment.autoSpawn) {
+                const spawnAmount = this.settings.dynamicAdjustment.minParticles - this.particles.length;
+                for (let i = 0; i < spawnAmount; i++) {
+                    this.addParticle();
+                }
+            }
+            
+            // Automatically destroy particles if above max
+            if (
+                this.settings.dynamicAdjustment.autoDestroy && 
+                (this.particleSettings.behaviour.spawning.respawn || 
+                (!this.particleSettings.behaviour.ttl.enabled &&
+                !this.particleSettings.behaviour.bounceOffEdges))
+            ) {
+                const destroyAmount = this.particles.filter(p => p.state !== 'destroyed' && p.state !== 'destroying').length - this.settings.dynamicAdjustment.maxParticles;
+                for (let i = 0; i < destroyAmount; i++) {
+                    const particle = this.particles[Math.floor(Math.random() * this.particles.length)];
+                    particle.state = 'destroying';
+                    particle.diedAt = Date.now();
+                }
+            }
+        }, this.settings.dynamicAdjustment.adjustmentInterval);
     }
 }
