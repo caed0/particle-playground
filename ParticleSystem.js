@@ -12,19 +12,18 @@ class ParticleSystem {
 
         this.settings = {
             maxFPS: 144, // Maximum frames per second
-            initialParticles: 20, // Initial number of particles
+            initialParticles: 100, // Initial number of particles
             initialSpawnPositions: ['random'],
             clearFrame: true,
             showDebugInfo: true,
             dynamicAdjustment: {
                 autoSpawn: true, // Automatically spawn particles
                 autoDestroy: true, // Automatically destroy particles
-                minParticles: 10, // Minimum number of particles
-                maxParticles: 50, // Maximum number of particles
+                minParticles: 50, // Minimum number of particles
+                maxParticles: 200, // Maximum number of particles
                 adjustmentInterval: 100 // Interval in milliseconds to adjust particle count
             },
 
-        
             backgroundSettings: {
                 type: 'color', // 'color' or 'gradient'
                 color: '#111111', // Solid background color
@@ -105,10 +104,10 @@ class ParticleSystem {
         }
 
         this.particleInteractionSettings = {
-            enabled: false,
+            enabled: true,
             attraction: { force: 75, radius: 150 }, // Force strength for particle attraction
             repulsion: { force: 125, radius: 50 },  // Force strength for particle repulsion
-            mode: 'attract' // 'attract', 'repel', or 'both'
+            mode: 'both' // 'attract', 'repel', or 'both'
         };
 
         this.mouseInteractionSettings = {
@@ -211,15 +210,13 @@ class ParticleSystem {
         for (let j = 0; j < this.particles.length; j++) {
             const otherParticle = this.particles[j];
             
-            // Skip if either particle is dead
             if (particle.state === 'dead' || otherParticle.state === 'dead') continue;
-            // Skip if particles are the same
             if (particle === otherParticle) continue;
             
             // Calculate distance between particles
             const dx = otherParticle.x - particle.x;
             const dy = otherParticle.y - particle.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distance = this.distances[particle.index][otherParticle.index];
             
             // Skip if particles are too far apart
             if (distance > settings.attraction.radius || distance < 1) continue;
@@ -338,10 +335,9 @@ class ParticleSystem {
             let particlesInRange = this.getParticlesInDistance(i);
             if (particlesInRange.length === 0) continue;
 
-
-
             for (let j = 0; j < particlesInRange.length; j++) {
                 const particleB = this.particles[particlesInRange[j]];
+                if(!particleB) console.log(j, particlesInRange, this.particles.length);
 
                 // Skip if particleB is dead, destroyed, or already connected
                 if (particleB.state === 'dead' || particleB.state === 'destroyed' || particleA.connectedTo.includes(particleB) || particleB.connectedTo.includes(particleA)) {
@@ -467,7 +463,11 @@ class ParticleSystem {
 
     animate(currentTime = 0) {
         // Delta time calculation
-        if (this.lastTime === 0) this.lastTime = currentTime; // Initialize lastTime on first frame
+        if (this.lastTime === 0) {
+            this.lastTime = currentTime; // Initialize lastTime on first frame
+            this.updateDistances();
+        }
+
         const deltaTime = (currentTime - this.lastTime) / 1000;
         const minDeltaTime = 1 / this.settings.maxFPS;
         const averageDeltaTime = this.deltaTimes.reduce((a, b) => a + b, 0) / this.deltaTimes.length || minDeltaTime;
@@ -484,6 +484,7 @@ class ParticleSystem {
         this.fps = Math.round(1 / averageDeltaTime);
     
         // Update
+        if (this.distances[0].length != this.particles.length) this.updateDistances();
         this.updateParticles(deltaTime);
         this.updateDistances();
         if (this.connectionSettings.enabled) this.updateConnections(deltaTime);
@@ -502,12 +503,13 @@ class ParticleSystem {
         clearInterval(this.settings.dynamicAdjustment.adjustmentInterval);
 
         this.drawBackground();
-        this.animate();
 
         // Initial particle spawning
         for (let i = 0; i < this.settings.initialParticles; i++) {
             this.addParticle({ spawnPositions: this.settings.initialSpawnPositions });
         }
+
+        this.animate();
 
         // Automatically adjust particle count
         setInterval(() => {

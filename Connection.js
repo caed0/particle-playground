@@ -52,10 +52,11 @@ class Connection {
 
         const maxLife = this.calculateMaxLife();
         if (this.settings.appearance.fading.enabled) {
+            const speed = this.distance > this.settings.distance ** 2 ? this.settings.appearance.fading.speed * 2 : this.settings.appearance.fading.speed;
             if (this.life < maxLife) {
-                this.life = Math.min(this.life + deltaTime * this.settings.appearance.fading.speed, maxLife);
+                this.life = Math.min(this.life + deltaTime * speed, maxLife);
             } else if (this.life > maxLife) {
-                this.life = Math.max(this.life - deltaTime * this.settings.appearance.fading.speed, maxLife);
+                this.life = Math.max(this.life - deltaTime * speed, maxLife);
             }
         } else {
             this.life = maxLife;
