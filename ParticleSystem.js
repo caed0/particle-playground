@@ -4,21 +4,22 @@ class ParticleSystem {
         this.ctx = canvas.getContext('2d');
 
         this.particles = [];
-        this.connections = new Connections(this.connectionSettings);
+        this.connections = [];
+        this.distances = [];
 
         this.frameTimes = [];
         this.lastTime = 0;
 
         this.settings = {
-            initialParticles: 150, // Initial number of particles
+            initialParticles: 20, // Initial number of particles
             initialSpawnPositions: ['random'],
-            clearCanvas: true,
+            clearFrame: true,
             showDebugInfo: true,
             dynamicAdjustment: {
                 autoSpawn: true, // Automatically spawn particles
                 autoDestroy: true, // Automatically destroy particles
-                minParticles: 50, // Minimum number of particles
-                maxParticles: 200, // Maximum number of particles
+                minParticles: 10, // Minimum number of particles
+                maxParticles: 50, // Maximum number of particles
                 adjustmentInterval: 100 // Interval in milliseconds to adjust particle count
             },
         
@@ -39,19 +40,19 @@ class ParticleSystem {
 
         this.particleSettings = {
             appearance: { 
-                size: { min: 8, max: 8 }, 
+                size: { min: 3, max: 6 }, 
                 color: '#00ff40', 
                 opacity: 1,
-                shape: 'square', 
+                shape: 'circle', 
                 shadow: { 
                     enabled: true, 
                     color: '#00FF41', 
                     radius: 5 
                 },
                 fading: { 
-                    enabled: true, 
-                    fadeInTime: 1, 
-                    fadeOutTime: 1 
+                    enabled: true,
+                    fadeInTime: 1,
+                    fadeOutTime: 1
                 },
             },
             behaviour: {
@@ -67,9 +68,9 @@ class ParticleSystem {
                     respawn: true
                 },
                 ttl: { 
-                    enabled: false,
-                    min: 5, 
-                    max: 10 
+                    enabled: true,
+                    min: 3, 
+                    max: 8 
                 },
                 bounceOffEdges: true,
                 bounceOffParticles: false
@@ -78,18 +79,23 @@ class ParticleSystem {
 
         this.connectionSettings = {
             enabled: true,
-            distance: 150, // Maximum distance for connections
+            distance: 200, // Maximum distance for connections
             maxConnections: 2, // Maximum number of connections per particle
             appearance: {
                 color: '#00ff40',
                 opacity: 1,
-                lineWidth: 2,
+                lineWidth: 3,
                 lineStyle: 'solid', // 'solid', 'dashed', 'dotted', or 'double'
                 shadow: { 
                     enabled: true, 
                     color: '#00ff40', 
                     radius: 8 
-                }
+                },
+                fading: { 
+                    enabled: true,
+                    distanceFadingThreshold: 0.85, // Procentual distance threshold for fading connections
+                    speed: 0.75, // Speed of fading in/out
+                },
             },
         }
 
@@ -157,7 +163,7 @@ class ParticleSystem {
             }
     }
 
-    addParticle(settingsOverride) {
+    addParticle(settingsOverride = {}) {
         // Override spawn positions
         let newSettings = this.particleSettings;
         if (settingsOverride.spawnPositions && settingsOverride.spawnPositions.length > 0) {
@@ -165,7 +171,7 @@ class ParticleSystem {
             newSettings.behaviour.spawning.spawnPositions = settingsOverride.spawnPositions;
         }
 
-        const particle = new Particle(newSettings, this.canvas);
+        const particle = new Particle(newSettings, this.particles.length, this.canvas);
 
         // Override position
         if (settingsOverride.position) {
@@ -177,11 +183,6 @@ class ParticleSystem {
     }
 
     updateParticles(deltaTime) {
-        // Apply particle-to-particle interactions first
-        if (this.particleInteractionSettings.enabled) {
-            this.applyParticleInteractions(deltaTime);
-        }
-        
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
 
@@ -191,86 +192,193 @@ class ParticleSystem {
                 continue;
             }
 
-            particle.update(this.particleSettings, deltaTime, this.particles);
+            if (this.particleInteractionSettings.enabled) {
+                this.applyParticleInteractions(particle, deltaTime);
+            }
+
+            particle.update(this.particleSettings, i, deltaTime, this.particles);
         }
     }
 
-    applyParticleInteractions(deltaTime) {
+    applyParticleInteractions(particle, deltaTime) {
         const settings = this.particleInteractionSettings;
         
-        for (let i = 0; i < this.particles.length; i++) {
-            const particleA = this.particles[i];
+        for (let j = 0; j < this.particles.length; j++) {
+            const otherParticle = this.particles[j];
             
-            for (let j = i + 1; j < this.particles.length; j++) {
-                const particleB = this.particles[j];
+            // Skip if either particle is dead
+            if (particle.state === 'dead' || otherParticle.state === 'dead') continue;
+            // Skip if particles are the same
+            if (particle === otherParticle) continue;
+            
+            // Calculate distance between particles
+            const dx = otherParticle.x - particle.x;
+            const dy = otherParticle.y - particle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Skip if particles are too far apart
+            if (distance > settings.attraction.radius || distance < 1) continue;
+            
+            // Normalize direction vector
+            const normalizedDx = dx / distance;
+            const normalizedDy = dy / distance;
+            
+            let forceStrength = 0;
+            let forceDirection = 1; // 1 for attraction, -1 for repulsion
+            
+            // Determine force type based on distance and mode
+            if (distance <= settings.repulsion.radius && (settings.mode === 'repel' || settings.mode === 'both')) {
+                // Repulsion - particles push away from each other
+                forceStrength = settings.repulsion.force * (1 - distance / settings.repulsion.radius);
+                forceDirection = -1;
+            } else if (distance > settings.repulsion.radius && distance <= settings.attraction.radius && (settings.mode === 'attract' || settings.mode === 'both')) {
+                // Attraction - particles pull toward each other
+                const attractionStrength = (distance - settings.repulsion.radius) / (settings.attraction.radius - settings.repulsion.radius);
+                forceStrength = settings.attraction.force * (1 - attractionStrength);
+                forceDirection = 1;
+            }
+            
+            if (forceStrength > 0) {
+                // Apply opacity-based force scaling - weaker forces when particles are fading
+                const opacityFactor = particle.life * otherParticle.life;
                 
-                // Skip if either particle is dead
-                if (particleA.isDead || particleB.isDead) continue;
+                // Apply force to both particles (Newton's third law)
+                const forceX = normalizedDx * forceStrength * forceDirection * deltaTime * opacityFactor;
+                const forceY = normalizedDy * forceStrength * forceDirection * deltaTime * opacityFactor;
                 
-                // Calculate distance between particles
-                const dx = particleB.x - particleA.x;
-                const dy = particleB.y - particleA.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                // Apply force to particle A (away from or toward B)
+                particle.vx -= forceX;
+                particle.vy -= forceY;
                 
-                // Skip if particles are too far apart
-                if (distance > settings.attraction.radius || distance < 1) continue;
+                // Apply equal and opposite force to particle B
+                otherParticle.vx += forceX;
+                otherParticle.vy += forceY;
                 
-                // Normalize direction vector
-                const normalizedDx = dx / distance;
-                const normalizedDy = dy / distance;
+                // Update directions and speeds
+                particle.direction = Math.atan2(particle.vy, particle.vx);
+                particle.speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
                 
-                let forceStrength = 0;
-                let forceDirection = 1; // 1 for attraction, -1 for repulsion
-                
-                // Determine force type based on distance and mode
-                if (distance <= settings.repulsion.radius && (settings.mode === 'repel' || settings.mode === 'both')) {
-                    // Repulsion - particles push away from each other
-                    forceStrength = settings.repulsion.force * (1 - distance / settings.repulsion.radius);
-                    forceDirection = -1;
-                } else if (distance > settings.repulsion.radius && distance <= settings.attraction.radius && (settings.mode === 'attract' || settings.mode === 'both')) {
-                    // Attraction - particles pull toward each other
-                    const attractionStrength = (distance - settings.repulsion.radius) / (settings.attraction.radius - settings.repulsion.radius);
-                    forceStrength = settings.attraction.force * (1 - attractionStrength);
-                    forceDirection = 1;
-                }
-                
-                if (forceStrength > 0) {
-                    // Apply opacity-based force scaling - weaker forces when particles are fading
-                    const opacityFactor = particleA.life * particleB.life;
-                    
-                    // Apply force to both particles (Newton's third law)
-                    const forceX = normalizedDx * forceStrength * forceDirection * deltaTime * opacityFactor;
-                    const forceY = normalizedDy * forceStrength * forceDirection * deltaTime * opacityFactor;
-                    
-                    // Apply force to particle A (away from or toward B)
-                    particleA.vx -= forceX;
-                    particleA.vy -= forceY;
-                    
-                    // Apply equal and opposite force to particle B
-                    particleB.vx += forceX;
-                    particleB.vy += forceY;
-                    
-                    // Update directions and speeds
-                    particleA.direction = Math.atan2(particleA.vy, particleA.vx);
-                    particleA.speed = Math.sqrt(particleA.vx * particleA.vx + particleA.vy * particleA.vy);
-                    
-                    particleB.direction = Math.atan2(particleB.vy, particleB.vx);
-                    particleB.speed = Math.sqrt(particleB.vx * particleB.vx + particleB.vy * particleB.vy);
-                }
+                otherParticle.direction = Math.atan2(otherParticle.vy, otherParticle.vx);
+                otherParticle.speed = Math.sqrt(otherParticle.vx * otherParticle.vx + otherParticle.vy * otherParticle.vy);
             }
         }
     }
 
-    drawParticles(deltaTime) {
-        this.updateParticles(deltaTime);
+    updateDistances() {
+        for (let i = 0; i < this.particles.length; i++) {
+            const particleA = this.particles[i];
+        
+            let distances = [];
+            for (let j = 0; j < this.particles.length; j++) {
+                const particleB = this.particles[j];
+
+                //Skip dead or destroyed particles
+                if (particleA.state === 'dead' || particleA.state === 'destroyed' || particleB.state === 'dead' || particleB.state === 'destroyed') {
+                    distances[j] = 0;
+                    continue;
+                }
+
+                // Skip self-comparison
+                if (i === j) {
+                    distances[j] = 0;
+                    continue;
+                }
+
+                // Calculate distance
+                const dx = particleB.x - particleA.x;
+                const dy = particleB.y - particleA.y;
+                const distance = dx * dx + dy * dy;
+                
+                distances[j] = distance;
+            }
+
+            this.distances[i] = distances;
+        }
+    }
+
+    updateConnections(deltaTime) {
+        for (let i = this.connections.length - 1; i >= 0; i--) {
+            const connection = this.connections[i];
+
+            if (!this.particles.includes(connection.start) || !this.particles.includes(connection.end)) {
+                this.connections.splice(i, 1);
+                continue;
+            }
+
+            const distance = this.distances[connection.start.index][connection.end.index];
+            if (distance <= 0) {
+                this.connections.splice(i, 1);
+                continue;
+            }
+
+            connection.update(this.connectionSettings, distance, deltaTime);
+
+            // Clean up connections if particles are destroyed or too far apart
+            if (connection.state === 'destroyed') {
+                this.connections.splice(i, 1);
+            } else {
+                connection.start.connectedTo.push(connection.end);
+                connection.end.connectedTo.push(connection.start);
+            }
+        }
+
+        for (let i = 0; i < this.particles.length; i++) {
+            const particleA = this.particles[i];
+
+            if (particleA.state === 'dead' || particleA.state === 'destroyed') continue;
+
+            let missingConnections = this.connectionSettings.maxConnections - particleA.connectedTo.length;
+            if (missingConnections <= 0) continue;
+
+            let particlesInRange = this.getParticlesInDistance(i);
+            if (particlesInRange.length === 0) continue;
+
+
+
+            for (let j = 0; j < particlesInRange.length; j++) {
+                const particleB = this.particles[particlesInRange[j]];
+
+                // Skip if particleB is dead, destroyed, or already connected
+                if (particleB.state === 'dead' || particleB.state === 'destroyed' || particleA.connectedTo.includes(particleB) || particleB.connectedTo.includes(particleA)) {
+                    continue;
+                }
+
+                // Create a new connection
+                const distance = this.distances[i][particlesInRange[j]];
+                const connection = new Connection(particleA, particleB, distance, this.connectionSettings);
+                this.connections.push(connection);
+                particleA.connectedTo.push(particleB);
+                particleB.connectedTo.push(particleA)
+                missingConnections--;
+
+                if (missingConnections <= 0) break; // Stop if we reached max connections
+            }
+        }
+    }
+
+    getParticlesInDistance(particleIndex) {
+        const particlesInRange = [];
+
+        for (let j = 0; j < this.distances[particleIndex].length; j++) {
+            const distance = this.distances[particleIndex][j];
+            if (distance > 0 && distance <= this.connectionSettings.distance ** 2) {
+                particlesInRange.push({ index: j, distance: distance });
+            }
+        }
+
+        return particlesInRange.sort((a, b) => a.distance - b.distance).map(p => p.index);
+    }
+
+    drawParticles() {
         for (const particle of this.particles) {
             particle.draw(this.ctx);
         }
     }
 
     drawConnections() {
-        this.connections.update(this.particles, this.connectionSettings);
-        this.connections.draw(this.ctx);
+        for (const connection of this.connections) {
+            connection.draw(this.ctx);
+        }
     }
 
     drawBackground() {
@@ -348,6 +456,7 @@ class ParticleSystem {
         this.ctx.fillText(`Min Particles: ${this.settings.dynamicAdjustment.minParticles}`, 10, 30);
         this.ctx.fillText(`Max Particles: ${this.settings.dynamicAdjustment.maxParticles}`, 10, 50);
         this.ctx.fillText(`Current Particles: ${this.particles.length}`, 10, 70);
+        this.ctx.fillText(`Active Connections: ${this.connections.length}`, 10, 90);
         this.ctx.restore();
     }
 
@@ -361,11 +470,16 @@ class ParticleSystem {
         this.frameTimes.push(deltaTime);
         if (this.frameTimes.length > 30) this.frameTimes.shift(); 
         this.fps = Math.round(1 / (this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length));
+    
+        // Update
+        this.updateParticles(deltaTime);
+        this.updateDistances();
+        if (this.connectionSettings.enabled) this.updateConnections(deltaTime);
 
         // Draw
-        if (this.settings.clearCanvas) this.drawBackground();
-        this.drawConnections();
-        this.drawParticles(deltaTime);
+        if (this.settings.clearFrame) this.drawBackground();
+        if (this.connectionSettings.enabled) this.drawConnections();
+        this.drawParticles();
         if (this.settings.showDebugInfo) this.drawDebugInfo();
 
         // Request next frame

@@ -1,11 +1,13 @@
 class Particle {
-    constructor(particleSettings, canvas) {
+    constructor(particleSettings, index, canvas) {
         this.canvas = canvas;
         this.settings = particleSettings;
+        this.index = index;
+
         this.life = 0;
-        this.timeLived = 0;
         this.updatedAt = null;
         this.diedAt = null;
+        this.connectedTo = [];
 
         this.init();
     }
@@ -13,6 +15,8 @@ class Particle {
     init() {
         this.state = 'restoring';
         this.spawnedAt = Date.now();
+        this.timeLived = 0;
+
 
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
         this.char = chars[Math.floor(Math.random() * chars.length)];
@@ -344,7 +348,9 @@ class Particle {
                 }
     }
 
-    update(particleSettings, deltaTime, particles) {
+    update(particleSettings, index, deltaTime, particles) {
+        this.index = index;
+
         // Skip update if particle is destroyed
         if (this.state === 'destroyed') return;
 
@@ -352,10 +358,21 @@ class Particle {
         this.updatedAt = Date.now();
         this.timeLived = this.updatedAt - this.spawnedAt;
         this.settings = particleSettings;
+        this.connectedTo = [];
+
+        // Respawn or destroy
+        if (this.state === 'dead') {
+            if (this.settings.behaviour.spawning.respawn) {
+                this.init();
+            } else {
+                this.state = 'destroyed';
+            }
+            return;
+        }
 
         // Kill particle if it exceeds TTL or goes out of bounds
         if (this.state === 'alive' && this.state !== 'destroying') {
-            if (this.ttl.enabled && this.ttl.duration < this.timeLived / 1000) {
+            if (this.settings.behaviour.ttl.enabled && this.ttl < this.timeLived / 1000) {
                 this.diedAt = this.updatedAt;
                 this.state = 'dying';
             }
@@ -396,6 +413,7 @@ class Particle {
         // Update state based on life
         if (this.state === 'dying' && this.life <= 0) {
             this.state = 'dead';
+            return;
         }
         if (this.state === 'destroying' && this.life <= 0) {
             this.state = 'destroyed';
@@ -403,16 +421,6 @@ class Particle {
         }
         if (this.state === 'restoring' && this.life >= 1) {
             this.state = 'alive';
-        }
-
-        // Respawn or destroy
-        if (this.state === 'dead') {
-            if (this.settings.behaviour.spawning.respawn) {
-                this.init();
-            } else {
-                this.state = 'destroyed';
-            }
-            return;
         }
 
         // Movement logic
@@ -443,6 +451,10 @@ class Particle {
 
     draw(ctx) {
         ctx.save();
+
+        // Enable antialiasing for smoother lines
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         ctx.fillStyle = this.settings.appearance.color;
         ctx.strokeStyle = this.settings.appearance.color;  
