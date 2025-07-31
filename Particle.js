@@ -37,35 +37,25 @@ class Particle {
     getSpawnPosition(spawnPosition) {
         const position = spawnPosition[Math.floor(Math.random() * spawnPosition.length)];
 
-        let gridX, gridY;
-        if (this.settings.behaviour.spawning.spawnGrid.columns > 0) {
-            // Calculate grid size based on this.canvas dimensions and spawning offset
-            const gridSizeX = (this.canvas.width - 2 * this.settings.behaviour.spawning.spawningOffset.x) / this.settings.behaviour.spawning.spawnGrid.columns;
-            
-            // Pick a random grid cell
-            const randomX = Math.floor(Math.random() * this.settings.behaviour.spawning.spawnGrid.columns);
+        let gridX = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? true : false;
+        let gridY = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? true : false;
 
-            // Calculate the spawn position based on the grid cell
+        if (gridX) {
+            const gridSizeX = (this.canvas.width - 2 * this.settings.behaviour.spawning.spawningOffset.x) / this.settings.behaviour.spawning.spawnGrid.columns;
+            const randomX = Math.floor(Math.random() * this.settings.behaviour.spawning.spawnGrid.columns);
             gridX = this.settings.behaviour.spawning.spawningOffset.x + randomX * gridSizeX + gridSizeX / 2;
         }
-        if (this.settings.behaviour.spawning.spawnGrid.rows > 0) {
-            // Calculate grid size based on this.canvas dimensions and spawning offset
+        if (gridY) {
             const gridSizeY = (this.canvas.height - 2 * this.settings.behaviour.spawning.spawningOffset.y) / this.settings.behaviour.spawning.spawnGrid.rows;
-
-            // Pick a random grid cell
             const randomY = Math.floor(Math.random() * this.settings.behaviour.spawning.spawnGrid.rows);
-
-            // Calculate the spawn position based on the grid cell
             gridY = this.settings.behaviour.spawning.spawningOffset.y + randomY * gridSizeY + gridSizeY / 2;
         }
-
-
 
         let x, y;
         switch (position) {
             case 'random':
-                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset : -this.settings.behaviour.spawning.spawningOffset);
-                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset : -this.settings.behaviour.spawning.spawningOffset);
+                x = gridX ? gridX : Math.random() * this.canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
+                y = gridY ? gridY : Math.random() * this.canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.y : -this.settings.behaviour.spawning.spawningOffset.y);
                 break;
             case 'center':
                 x = this.canvas.width / 2 + Math.random() * (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
@@ -104,35 +94,35 @@ class Particle {
                 y = this.canvas.height / 2;
                 break;
             case 'top-edge':
-                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width;
+                x = gridX ? gridX : Math.random() * this.canvas.width;
                 y = this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'bottom-edge':
-                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width;
+                x = gridX ? gridX : Math.random() * this.canvas.width;
                 y = this.canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 break;
             case 'left-edge':
                 x = this.settings.behaviour.spawning.spawningOffset.x;
-                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height;
+                y = gridY ? gridY : Math.random() * this.canvas.height;
                 break;
             case 'right-edge':
                 x = this.canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
-                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height;
+                y = gridY ? gridY : Math.random() * this.canvas.height;
                 break;
             case 'random-edge':
                 const edge = Math.floor(Math.random() * 4);
                 if (edge === 0) { // Top edge
-                    x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width;
+                    x = gridX ? gridX : Math.random() * this.canvas.width;
                     y = this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (edge === 1) { // Bottom edge
-                    x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width;
+                    x = gridX ? gridX : Math.random() * this.canvas.width;
                     y = this.canvas.height - this.settings.behaviour.spawning.spawningOffset.y;
                 } else if (edge === 2) { // Left edge
                     x = this.settings.behaviour.spawning.spawningOffset.x;
-                    y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height;
+                    y = gridY ? gridY : Math.random() * this.canvas.height;
                 } else { // Right edge
                     x = this.canvas.width - this.settings.behaviour.spawning.spawningOffset.x;
-                    y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height;
+                    y = gridY ? gridY : Math.random() * this.canvas.height;
                 }
                 break;
             case 'random-corner':
@@ -152,8 +142,8 @@ class Particle {
                 }
                 break;
             default:
-                x = this.settings.behaviour.spawning.spawnGrid.columns > 0 ? gridX : Math.random() * this.canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
-                y = this.settings.behaviour.spawning.spawnGrid.rows > 0 ? gridY : Math.random() * this.canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.y : -this.settings.behaviour.spawning.spawningOffset.y);
+                x = gridX ? gridX : Math.random() * this.canvas.width + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.x : -this.settings.behaviour.spawning.spawningOffset.x);
+                y = gridY ? gridY : Math.random() * this.canvas.height + (Math.random() < 0.5 ? this.settings.behaviour.spawning.spawningOffset.y : -this.settings.behaviour.spawning.spawningOffset.y);
                 break;
         }
 

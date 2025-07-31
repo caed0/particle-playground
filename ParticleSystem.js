@@ -66,7 +66,10 @@ class ParticleSystem {
                 spawning: {
                     spawnPositions: ['random'],
                     spawningOffset: { x: -100, y: -100 },
-                    spawnGrid: { columns: 30, rows: 30 },
+                    spawnGrid: { 
+                        columns: 0, 
+                        rows: 0
+                    },
                     respawn: true
                 },
                 ttl: { 
