@@ -7,10 +7,11 @@ class ParticleSystem {
         this.connections = [];
         this.distances = [];
 
-        this.frameTimes = [];
+        this.deltaTimes = [];
         this.lastTime = 0;
 
         this.settings = {
+            maxFPS: 144, // Maximum frames per second
             initialParticles: 20, // Initial number of particles
             initialSpawnPositions: ['random'],
             clearFrame: true,
@@ -22,6 +23,7 @@ class ParticleSystem {
                 maxParticles: 50, // Maximum number of particles
                 adjustmentInterval: 100 // Interval in milliseconds to adjust particle count
             },
+
         
             backgroundSettings: {
                 type: 'color', // 'color' or 'gradient'
@@ -462,14 +464,21 @@ class ParticleSystem {
 
     animate(currentTime = 0) {
         // Delta time calculation
-        if (this.lastTime === 0) this.lastTime = currentTime;
-        const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
-        this.lastTime = currentTime;
+        if (this.lastTime === 0) this.lastTime = currentTime; // Initialize lastTime on first frame
+        const deltaTime = (currentTime - this.lastTime) / 1000;
+        const minDeltaTime = 1 / this.settings.maxFPS;
+        const averageDeltaTime = this.deltaTimes.reduce((a, b) => a + b, 0) / this.deltaTimes.length || minDeltaTime;
+        
+        // Skip this frame to maintain maxFPS
+        if (deltaTime < minDeltaTime && averageDeltaTime < minDeltaTime) {
+            requestAnimationFrame((time) => this.animate(time));
+            return;
+        }
 
-        // FPS Calculation
-        this.frameTimes.push(deltaTime);
-        if (this.frameTimes.length > 30) this.frameTimes.shift(); 
-        this.fps = Math.round(1 / (this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length));
+        this.lastTime = currentTime;
+        this.deltaTimes.push(deltaTime);
+        if (this.deltaTimes.length > 120) this.deltaTimes.shift();
+        this.fps = Math.round(1 / averageDeltaTime);
     
         // Update
         this.updateParticles(deltaTime);
