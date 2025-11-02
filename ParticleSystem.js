@@ -172,7 +172,13 @@ class ParticleSystem {
         let newSettings = this.particleSettings;
         if (settingsOverride.spawnPositions && settingsOverride.spawnPositions.length > 0) {
             newSettings = structuredClone(this.particleSettings);
-            newSettings.behaviour.spawning.spawnPositions = settingsOverride.spawnPositions;
+            // Handle spawnPositions as either array or single string
+            const spawnPositionsOption = settingsOverride.spawnPositions;
+            if (Array.isArray(spawnPositionsOption)) {
+                newSettings.behaviour.spawning.spawnPositions = [spawnPositionsOption[Math.floor(Math.random() * spawnPositionsOption.length)]];
+            } else {
+                newSettings.behaviour.spawning.spawnPositions = [spawnPositionsOption];
+            }
         }
 
         const particle = new Particle(newSettings, this.particles.length, this.canvas);
@@ -506,7 +512,14 @@ class ParticleSystem {
 
         // Initial particle spawning
         for (let i = 0; i < this.settings.initialParticles; i++) {
-            this.addParticle({ spawnPositions: this.settings.initialSpawnPositions });
+            // Handle initialSpawnPositions as either array or single string
+            let spawnPosition;
+            if (Array.isArray(this.settings.initialSpawnPositions)) {
+                spawnPosition = this.settings.initialSpawnPositions[Math.floor(Math.random() * this.settings.initialSpawnPositions.length)];
+            } else {
+                spawnPosition = this.settings.initialSpawnPositions;
+            }
+            this.addParticle({ spawnPositions: [spawnPosition] });
         }
 
         this.animate();
