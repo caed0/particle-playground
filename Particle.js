@@ -17,6 +17,7 @@ class Particle {
         this.spawnedAt = Date.now();
         this.timeLived = 0;
 
+        this.shape = this.settings.appearance.shape[Math.floor(Math.random() * this.settings.appearance.shape.length)];
 
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
         this.char = chars[Math.floor(Math.random() * chars.length)];
@@ -454,14 +455,13 @@ class Particle {
             ctx.shadowBlur = this.settings.appearance.shadow.radius;
         }
 
-        const shape = this.settings.appearance.shape;
         const r = this.size;
         const x = this.x;
         const y = this.y;
 
         ctx.beginPath();
 
-        switch (shape) {
+        switch (this.shape) {
             case 'circle':
                 ctx.arc(x, y, r, 0, Math.PI * 2);
                 break;

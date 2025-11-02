@@ -44,7 +44,7 @@ class ParticleSystem {
                 size: { min: 3, max: 6 }, 
                 color: '#00ff40', 
                 opacity: 1,
-                shape: 'circle', 
+                shape: ['circle', 'square', 'triangle'], 
                 shadow: { 
                     enabled: true, 
                     color: '#00FF41', 
