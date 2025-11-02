@@ -89,7 +89,7 @@ class ParticleSystem {
                 color: '#00ff40',
                 opacity: 1,
                 lineWidth: 3,
-                lineStyle: 'solid', // 'solid', 'dashed', 'dotted', or 'double'
+                lineStyle: ['solid', 'dashed', 'dotted', 'double'], // 'solid', 'dashed', 'dotted', or 'double'
                 shadow: { 
                     enabled: true, 
                     color: '#00ff40', 

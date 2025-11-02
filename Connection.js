@@ -1,6 +1,7 @@
 class Connection {
     constructor(start, end, distance, connectionSettings) {
         this.settings = connectionSettings;
+        this.connectionStyle = this.settings.appearance.lineStyle[Math.floor(Math.random() * this.settings.appearance.lineStyle.length)];
         this.start = start;
         this.end = end;
         this.state = 'alive';
@@ -79,7 +80,7 @@ class Connection {
         }
 
         // Draw connections based on line style
-        switch (this.settings.appearance.lineStyle) {
+        switch (this.connectionStyle) {
             case 'solid':
                 this.drawSolidLine(ctx);
                 break;
