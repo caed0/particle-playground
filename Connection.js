@@ -1,7 +1,15 @@
 class Connection {
     constructor(start, end, distance, connectionSettings) {
         this.settings = connectionSettings;
-        this.connectionStyle = this.settings.appearance.lineStyle[Math.floor(Math.random() * this.settings.appearance.lineStyle.length)];
+        
+        // Handle lineStyle as either array or single string
+        const lineStyleOption = this.settings.appearance.lineStyle;
+        if (Array.isArray(lineStyleOption)) {
+            this.connectionStyle = lineStyleOption[Math.floor(Math.random() * lineStyleOption.length)];
+        } else {
+            this.connectionStyle = lineStyleOption;
+        }
+        
         this.start = start;
         this.end = end;
         this.state = 'alive';

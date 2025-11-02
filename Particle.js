@@ -17,7 +17,13 @@ class Particle {
         this.spawnedAt = Date.now();
         this.timeLived = 0;
 
-        this.shape = this.settings.appearance.shape[Math.floor(Math.random() * this.settings.appearance.shape.length)];
+        // Handle shape as either array or single string
+        const shapeOption = this.settings.appearance.shape;
+        if (Array.isArray(shapeOption)) {
+            this.shape = shapeOption[Math.floor(Math.random() * shapeOption.length)];
+        } else {
+            this.shape = shapeOption;
+        }
 
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
         this.char = chars[Math.floor(Math.random() * chars.length)];
