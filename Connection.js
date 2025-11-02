@@ -141,6 +141,8 @@ class Connection {
     }
 
     drawWavyLine(ctx) {
+        const dx = this.end.x - this.start.x;
+        const dy = this.end.y - this.start.y;
         const waveLength = 25; // Length of each wave cycle
         const amplitude = 8; // Height of the wave
         const smoothness = 20; // Number of segments per wave for smoothness
@@ -188,6 +190,8 @@ class Connection {
     }
 
     drawZigzagLine(ctx) {
+        const dx = this.end.x - this.start.x;
+        const dy = this.end.y - this.start.y;
         const zigzagLength = 20; // Length of each zigzag cycle (peak to peak)
         const amplitude = 6; // Height of the zigzag
         const smoothness = 7; // Number of segments per zigzag cycle for smoothness
@@ -242,6 +246,8 @@ class Connection {
     }
 
     drawDoubleLine(ctx) {
+        const dx = this.end.x - this.start.x;
+        const dy = this.end.y - this.start.y;
         const offset = this.settings.appearance.lineWidth + 2; // Offset between the two lines
 
         // Calculate perpendicular direction for offset
